@@ -1,0 +1,109 @@
+:after, :before {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    box-sizing: border-box;
+}
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: Space Grotesk,Arial,sans-serif;
+    font-size: 14px;
+    color: #191919;
+    background: rgb(244, 244, 222);
+
+}
+label {
+    color: #191919;
+    font-size: 15px;
+}
+label:hover {
+    color: rgb(244, 244, 222);
+    cursor: pointer;
+    transition:0.1s;
+}
+label:active {
+color: #191919;
+cursor: pointer;
+transition: 0.1s;
+}
+.label {
+    background-color: red;
+    opacity: 1;
+    border: none;
+    outline: none;
+}
+.citySelector {
+    margin-top: 5px;
+    display: flex;
+}
+#citySelector {
+    width: 160px;
+    height: 25px;
+    border: red;
+    outline: none;
+    border: #191919;    
+}
+.out {
+    color: #f9f6f6;
+    background-color: rgba(36, 35, 35, 0.6);
+    width: 300px;
+    height: 450px;
+    display: flex;
+    flex-direction: column;
+    align-items: center ;
+    margin-top: 39px;
+    padding: 0;
+    border-radius: 15px;
+}
+.top {
+    display: flex;
+    margin: 0px;
+    padding: 0px;
+}
+.temperature {
+    margin: 0px;
+    padding-top: 20px;
+}
+.container {
+    width: 400px;
+    height: 600px;
+    background-color: rgba(0, 0, 0, 0.5);
+    background-image: url(./images/Lissabon.jpg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.header {
+    margin-top: 30px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+h1 {
+    font-size: 60px;
+    padding: 0px;
+}
+h2 {
+    margin: 0px;
+}
+em, p {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f9f6f6;
+}
+.image {
+    padding: 0px;
+    margin: 0px;
+    border: none;
+}
+
+main {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    background: rgb(244, 244, 222);
+}
+.city-name {
+    color: red;
+}
