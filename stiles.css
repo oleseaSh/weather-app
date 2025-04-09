@@ -1,0 +1,17 @@
+.city-tab {
+    margin: 0 5px 10px 0;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #fcbf06;
+    color: white;
+    cursor: pointer;
+}
+
+.city-tab:hover {
+    background-color: #434445;
+}
+
+.weather img {
+    width: 80px;
+}

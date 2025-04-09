@@ -1,141 +1,111 @@
-// текущая дата и время
-const currentDate = new Date();
+const API_KEY = '01a3a80c80c58bf6c161964f9556e365';
+        const BASE_URL = 'https://api.openweathermap.org/data/2.5/';
+        const MAX_CITIES = 5;
+        const STORAGE_KEY = 'weatherCities';
+        let userCities = [];
 
-const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
-                    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-const month = monthNames[currentDate.getMonth()];
-const day = currentDate.getDate();
-let hours = currentDate.getHours();
-
-const ampm = hours >= 12 ? 'pm' : 'am';
-hours = hours % 12;
-hours = hours ? hours : 12; 
-
-const minutes = currentDate.getMinutes();
-const formattedDateTime = `${month} ${day}, ${hours}:${minutes}${ampm}`;
-
-
-const dateTimeElement = document.getElementById('dateTime');
-dateTimeElement.textContent = formattedDateTime;
-
-
-// фунция получения погоды по APIKey
-
-const BASE_URL = 'https://api.openweathermap.org/data/2.5/weather?';
-const APIKey = '01a3a80c80c58bf6c161964f9556e365';
-const cities = ['London', 'Minsk', 'Gdansk', 'Kyiv', 'Bozen'];
-
-function getWeather(cityName) {
-    const CityRequest = `q=${cityName}&appid=${APIKey}`;
-
-    const city = document.querySelector('.city-name');
-    const temperature = document.querySelector('.temperature');
-    const image = document.querySelector('.image');
-    const description = document.querySelector('.description');
-    const windDirection = document.querySelector('.wind-direction');
-    const windSpeed = document.querySelector('.wind-speed');
-    const pressure = document.querySelector('.pressure');
-
-    fetch(`${BASE_URL}${CityRequest}`)
-        .then((response) => response.json())
-        .then((data) => {
-            console.log(data);
-            city.innerText = `${data.name}, ${data.sys.country}`;
-            temperature.innerHTML = `${Math.round(data.main.temp - 273.15)}&deg;C`;
-            description.innerText = `${data.weather[0].description}`;
-            image.innerHTML = `<img src='https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png' alt='Weather icon' />`;
-            windDirection.innerText = `Wind Direction: ${data.wind.deg}°`;
-            windSpeed.innerText = `Wind Speed: ${data.wind.speed} m/s`;
-            pressure.innerText = `Pressure: ${data.main.pressure} hPa`;
-        })
-        .catch((error) => {
-            console.error('Error fetching weather data:', error);
+        document.addEventListener('DOMContentLoaded', () => {
+            userCities = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [{ name: 'Milan', country: 'IT' }];
+            initSelect2();
+            renderTabs();
+            loadWeather(userCities[0]);
         });
-}
 
+        function initSelect2() {
+            $('#citySelect').select2({
+                placeholder: 'Введите город',
+                minimumInputLength: 2,
+                language: 'ru',
+                ajax: {
+                    url: params => `https://api.openweathermap.org/geo/1.0/direct?q=${params.term}&limit=5&appid=${API_KEY}`,
+                    dataType: 'json',
+                    processResults: data => ({
+                        results: data.map(city => ({
+                            id: city.name,
+                            text: `${city.name}, ${city.country}`,
+                            name: city.name,
+                            country: city.country
+                        }))
+                    })
+                }
+            });
 
-// фунция меняет bg
+            document.getElementById('addCityBtn').addEventListener('click', () => {
+                const selected = $('#citySelect').select2('data')[0];
+                if (!selected) return;
 
-function setCityBackground(cityName) {
-    const container = document.querySelector('.container');
-    let imageUrl;
+                const newCity = { name: selected.name, country: selected.country };
 
-    switch(cityName) {
-        case 'Madrid':
-            imageUrl = './images/Madrid.jpg';
-            break;
-        case 'Catania':
-            imageUrl = './images/Catania.jpg';
-            break;
-        case 'Bolzano':
-            imageUrl = './images/Bolzano.jpg';
-            break;
-        case 'Lisbon':
-            imageUrl = './images/Lissabon.jpg';
-            break;
-        default:
-            imageUrl = './images/Lissabon.jpg'; // По умолчанию используем фоновое изображение для Лиссабона
-            break;
-    }
+                // Удаляем дубликаты
+                userCities = userCities.filter(c => !(c.name === newCity.name && c.country === newCity.country));
+                userCities.unshift(newCity);
+                userCities = userCities.slice(0, MAX_CITIES);
+                saveCities();
+                renderTabs();
+                loadWeather(newCity);
+                $('#citySelect').val(null).trigger('change');
+            });
+        }
 
-    container.style.backgroundImage = `url("${imageUrl}")`;
-}
+        function saveCities() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(userCities));
+        }
 
+        function renderTabs() {
+            const container = document.getElementById('cityTabs');
+            container.innerHTML = '';
+            userCities.forEach(city => {
+                const btn = document.createElement('button');
+                btn.className = 'city-tab';
+                btn.textContent = city.name;
+                btn.onclick = () => loadWeather(city);
+                container.appendChild(btn);
+            });
+        }
 
-// Формирование списка select с помощью JavaScript:
+        async function loadWeather(city) {
+            const weatherBox = document.querySelector('.weather-content');
+            weatherBox.innerHTML = `<p>Загрузка погоды для ${city.name}...</p>`;
+            try {
+                const response = await fetch(`${BASE_URL}weather?q=${city.name},${city.country}&appid=${API_KEY}&units=metric&lang=ru`);
+                if (!response.ok) throw new Error('Не удалось загрузить');
 
+                getCityBackground(city.name);
 
-const citySelector = document.getElementById('citySelector');
+                const data = await response.json();
 
-const optionLisbon = document.createElement('option');
-optionLisbon.value = 'Lisbon';
-optionLisbon.textContent = 'Lisbon';
-citySelector.appendChild(optionLisbon);
+                weatherBox.innerHTML = `
+            <h3>${data.name}, ${data.sys.country}</h3>
+            <p>${Math.round(data.main.temp)}°C, ${data.weather[0].description}</p>
+            <img src="https://openweathermap.org/img/wn/${data.weather[0].icon}@2x.png" alt="">
+            <p>💨 Ветер: ${data.wind.speed} м/с</p>
+            <p>💧 Влажность: ${data.main.humidity}%</p>
+            <p>🔽 Давление: ${data.main.pressure} гПа</p>
+        `;
+            } catch (err) {
+                weatherBox.innerHTML = `<p class="text-danger">Ошибка загрузки: ${err.message}</p>`;
+            }
+        }
 
-const optionMadrid = document.createElement('option');
-optionMadrid.value = 'Madrid';
-optionMadrid.textContent = 'Madrid';
-citySelector.appendChild(optionMadrid);
+        async function getCityBackground(cityName) {
+            const accessKey = 'iIfYply2vee8dt-igpTkVuVOBFyy37qZwkSd07FbcIA';
+            try {
+                const response = await fetch(`https://api.unsplash.com/search/photos?query=${cityName}&client_id=${accessKey}`);
+                const data = await response.json();
 
-const optionCatania = document.createElement('option');
-optionCatania.value = 'Catania';
-optionCatania.textContent = 'Catania';
-citySelector.appendChild(optionCatania);
+                if (data.results.length === 0) {
+                    // 👉 Фон не найден — ставим дефолтный
+                    document.querySelector('.weather-content').style.backgroundImage = 'url("images/lago.jpg")';
+                    return;
+                }
 
-const optionBolzano = document.createElement('option');
-optionBolzano.value = 'Bolzano';
-optionBolzano.textContent = 'Bolzano';
-citySelector.appendChild(optionBolzano);
-
-
-
-//  меняем bg и погоду при смене города:
-
-document.addEventListener('DOMContentLoaded', function() {
-    const citySelector = document.getElementById('citySelector');
-    const container = document.querySelector('.container'); 
-
-    citySelector.addEventListener('change', function() {
-        const selectedCity = this.value;
-        setCityBackground(selectedCity);
-        getWeather(selectedCity);
-    });
-
-    //  меняем bg и погоду при нажатии на кнопку:
-
-    const labelButton = document.querySelector('.label');
-    labelButton.addEventListener('click', function() {
-        const selectedIndex = citySelector.selectedIndex; // Получаем индекс текущего выбранного города
-        const nextIndex = (selectedIndex + 1) % citySelector.options.length; // Вычисляем индекс следующего города
-        citySelector.selectedIndex = nextIndex; // Устанавливаем выбранный город на следующий
-        const selectedCity = citySelector.value; // Получаем выбранный город
-        getWeather(selectedCity); // Вызываем функцию getWeather для нового выбранного города
-        setCityBackground(selectedCity); // Устанавливаем фоновое изображение для нового выбранного города
-    });
-
-    // Получаем значение первого города в списке
-
-    const firstCity = citySelector.options[0].value; 
-    getWeather(firstCity);
-});
+                // Если найден — используем картинку
+                const imageUrl = data.results[0].urls.regular;
+                document.querySelector('.weather-content').style.backgroundImage = `url(${imageUrl})`;
+            } catch (error) {
+                console.error('Ошибка загрузки фона:', error);
+                // 👉 В случае ошибки тоже ставим дефолтный
+                document.querySelector('.weather-content').style.backgroundImage = 'url("images/lago.jpg")';
+            }
+        }
 
